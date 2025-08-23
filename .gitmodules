@@ -1,0 +1,9 @@
+[submodule "http-api-gateway"]
+	path = http-api-gateway
+	url = https://github.com/mrrmartin01/http-api-gateway.git
+[submodule "payments-microservice"]
+	path = payments-microservice
+	url = https://github.com/mrrmartin01/payment-service.git
+[submodule "users-microservice"]
+	path = users-microservice
+	url = https://github.com/mrrmartin01/auth-service.git
