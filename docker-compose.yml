@@ -25,3 +25,12 @@ services:
     image: nats
     ports:
       - 4222:4222
+
+  postgres_db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: mkstore
+    ports:
+      - 5432:5432
