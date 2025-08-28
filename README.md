@@ -31,16 +31,15 @@ High-level system diagram (gateway, services, NATS, DB):
 
 ```mermaid
 flowchart LR
-  Client[Client (web / mobile / other)] -->|HTTP| Gateway[HTTP API Gateway<br/>(http-api-gateway)]
-  Gateway -->|NATS (pub/sub & request/reply)| NATS[NATS Server]
-  Gateway -->|HTTP or NATS| UsersS[Users Microservice<br/>(users-microservice)]
-  Gateway -->|HTTP or NATS| PaymentsS[Payments Microservice<br/>(payments-microservice)]
-  PaymentsS -->|TypeORM| PaymentsDB[(Payments DB)]
-  UsersS -->|TypeORM| UsersDB[(Users DB)]
+  Client["Client (web / mobile / other)"] -->|HTTP| Gateway["HTTP API Gateway\n(http-api-gateway)"]
+  Gateway -->|NATS (pub/sub & request/reply)| NATS["NATS Server"]
+  Gateway -->|HTTP or NATS| UsersS["Users Microservice\n(users-microservice)"]
+  Gateway -->|HTTP or NATS| PaymentsS["Payments Microservice\n(payments-microservice)"]
+  PaymentsS -->|TypeORM| PaymentsDB[("Payments DB")]
+  UsersS -->|TypeORM| UsersDB[("Users DB")]
   NATS --> PaymentsS
   NATS --> UsersS
   style NATS fill:#f3f4f6,stroke:#333,stroke-width:1px
-
 ```
 
 Sequence for creating a payment:
@@ -48,10 +47,10 @@ Sequence for creating a payment:
 ```mermaid
 sequenceDiagram
   participant C as Client
-  participant G as API Gateway
-  participant U as Users Service
-  participant P as Payments Service
-  participant DB as Payments DB
+  participant G as API_Gateway
+  participant U as Users_Service
+  participant P as Payments_Service
+  participant DB as Payments_DB
 
   C->>G: POST /payments { userId, amount, ... }
   alt Gateway validates user
@@ -112,18 +111,18 @@ npm install
 npm run start:dev
 ```
 
-Note: service scripts follow NestJS conventions (`start`, `start:dev`, `build`, `test`).
+Note: service scripts follow NestJS conventions (start, start:dev, build, test).
 
 ## Service Configuration & Environment Variables
 
-Each service reads environment variables to configure connections and behavior. Below are suggested variable names and an example `.env` block per service.
+Each service reads environment variables to configure connections and behavior. Below are suggested variable names and an example .env block per service.
 
 General variables used across services:
 
-- NATS_URL (e.g. `nats://nats:4222`)
+- NATS_URL (e.g. nats://nats:4222)
 - NODE_ENV (development | production)
 
-http-api-gateway (example `.env`)
+http-api-gateway (example .env)
 
 ```env
 PORT=3000
@@ -132,7 +131,7 @@ JWT_SECRET=changeme
 NODE_ENV=development
 ```
 
-payments-microservice (example `.env`)
+payments-microservice (example .env)
 
 ```env
 DB_HOST=postgres
@@ -144,7 +143,7 @@ TYPEORM_SYNCHRONIZE=true
 NATS_URL=nats://nats:4222
 ```
 
-users-microservice (example `.env`)
+users-microservice (example .env)
 
 ```env
 DB_HOST=postgres
@@ -156,7 +155,7 @@ TYPEORM_SYNCHRONIZE=true
 NATS_URL=nats://nats:4222
 ```
 
-Tip: Add a repo-level `.env.example` with all variables and copy it into per-service folders as needed.
+Tip: Add a repo-level .env.example with all variables and copy it into per-service folders as needed.
 
 ## API Endpoints & DTOs
 
@@ -169,7 +168,7 @@ Gateway exposes client-facing endpoints. Inside the codebase the controllers and
 
 Canonical example endpoints (gateway)
 
-- POST /payments — create a payment (body uses `CreatePaymentDto`)
+- POST /payments — create a payment (body uses CreatePaymentDto)
 - GET  /users/:id — fetch user (used by gateway to validate requests)
 
 CreatePaymentDto (shape):
@@ -185,7 +184,7 @@ CreateUserDto (shape):
 - password: string
 - name?: string
 
-Validation is typically implemented with `class-validator` + `class-transformer` in DTOs.
+Validation is typically implemented with class-validator + class-transformer in DTOs.
 
 ## Development Workflow
 
