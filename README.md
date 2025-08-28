@@ -30,16 +30,38 @@ A modular microservices example repository using NestJS, NATS (pub/sub & request
 High-level system diagram (gateway, services, NATS, DB):
 
 ```mermaid
-flowchart LR
-  Client["Client (web / mobile / other)"] -->|HTTP| Gateway["HTTP API Gateway<br/>(http-api-gateway)"]
-  Gateway --> NATS["NATS Server<br/>pub/sub & request/reply"]
-  Gateway -->|HTTP| UsersS["Users Microservice<br/>(users-microservice)"]
-  Gateway -->|HTTP| PaymentsS["Payments Microservice<br/>(payments-microservice)"]
-  PaymentsS -->|TypeORM| PaymentsDB[(Payments DB)]
-  UsersS -->|TypeORM| UsersDB[(Users DB)]
-  NATS --> PaymentsS
-  NATS --> UsersS
-  style NATS fill:#f3f4f6,stroke:#333,stroke-width:1px
+graph TB
+    Client[Client Applications] -->|HTTP → 3000| Gateway[HTTP API Gateway<br/>Port: 3000]
+    Gateway -->|NATS publish / request| NATS[(NATS Broker<br/>nats:4222)]
+    NATS --> Payments[Payments Microservice<br/>(NATS consumer)]
+    NATS --> Users[Users Microservice<br/>(NATS consumer)]
+    Payments -->|TypeORM| Postgres[(PostgreSQL<br/>mkstore:5432)]
+    Users -->|TypeORM| Postgres
+    Payments -->|emit event| NATS
+    Users -->|reply / emit| NATS
+    style NATS fill:#f3f4f6,stroke:#333,stroke-width:1px
+```
+
+### Service Communication Flow (tailored)
+
+```
+┌─────────────────┐    ┌────────────────────────────────────┐    ┌────────────────────────────────────┐
+│   API Gateway    │    │   Users Microservice (NATS only)   │    │ Payments Microservice (NATS only)  │
+│   (HTTP, 3000)  │───▶│   (subscribes to NATS subjects)    │◄───│   (subscribes to NATS subjects)    │
+└─────────────────┘    └────────────────────────────────────┘    └────────────────────────────────────┘
+         │                         ▲                        ▲
+         │                         │                        │
+         ▼                         │                        │
+    ┌────────┐                     │                        │
+    │  NATS  │─────────────────────┘                        │
+    │ 4222   │  (pub/sub & request/reply broker)             │
+    └────────┘                                              │
+         │                                                 │
+         ▼                                                 │
+  ┌────────────┐                                            │
+  │ PostgreSQL │◄───────────────────────────────────────────┘
+  │   5432     │
+  └────────────┘
 ```
 
 Sequence for creating a payment:
@@ -47,21 +69,18 @@ Sequence for creating a payment:
 ```mermaid
 sequenceDiagram
   participant C as Client
-  participant G as API_Gateway
-  participant U as Users_Service
-  participant P as Payments_Service
-  participant DB as Payments_DB
+  participant G as API_Gateway (HTTP)
+  participant N as NATS
+  participant P as Payments_Microservice
+  participant DB as Postgres
 
-  C->>G: POST /payments { userId, amount, ... }
-  alt Gateway validates user
-    G->>U: GET /users/:id (HTTP or NATS)
-    U-->>G: 200 user
-  end
-  G->>P: NATS request createPayment({ userId, amount })
-  P->>DB: INSERT payment
-  P-->>G: 201 { paymentId }
-  G-->>C: 201 { paymentId }
-  P->>NATS: publish payment.created
+  C->>G: POST /payments { userId, amount }
+  G->>N: publish createPayment (subject: createPayment)
+  Note right of G: Gateway returns 202 Accepted (async)
+  N->>P: deliver createPayment
+  P->>DB: INSERT payment record
+  P->>N: publish paymentCreated (subject: payment.created)
+  Note left of P: other services (or gateway) may consume this event
 ```
 
 Notes:
