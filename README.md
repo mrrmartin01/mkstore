@@ -31,15 +31,15 @@ High-level system diagram (gateway, services, NATS, DB):
 
 ```mermaid
 graph TB
-    Client[Client Applications] -->|HTTP → 3000| Gateway[HTTP API Gateway<br/>Port: 3000]
-    Gateway -->|NATS publish / request| NATS[(NATS Broker<br/>nats:4222)]
-    NATS --> Payments[Payments Microservice<br/>(NATS consumer)]
-    NATS --> Users[Users Microservice<br/>(NATS consumer)]
-    Payments -->|TypeORM| Postgres[(PostgreSQL<br/>mkstore:5432)]
-    Users -->|TypeORM| Postgres
-    Payments -->|emit event| NATS
-    Users -->|reply / emit| NATS
-    style NATS fill:#f3f4f6,stroke:#333,stroke-width:1px
+  Client[Client Applications] -->|HTTP → 3000| Gateway["HTTP API Gateway<br/>Port: 3000"]
+  Gateway -->|NATS publish / request| NATS["NATS Broker<br/>nats:4222"]
+  NATS --> Payments["Payments Microservice<br/>NATS consumer"]
+  NATS --> Users["Users Microservice<br/>NATS consumer"]
+  Payments -->|TypeORM| Postgres["PostgreSQL<br/>mkstore:5432"]
+  Users -->|TypeORM| Postgres
+  Payments -->|emit event| NATS
+  Users -->|reply / emit| NATS
+  style NATS fill:#f3f4f6,stroke:#333,stroke-width:1px
 ```
 
 ### Service Communication Flow (tailored)
