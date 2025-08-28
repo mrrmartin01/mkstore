@@ -31,15 +31,16 @@ High-level system diagram (gateway, services, NATS, DB):
 
 ```mermaid
 flowchart LR
-  Client[Client (web/mobile/other)] -->|HTTP| Gateway[HTTP API Gateway\n(`http-api-gateway`)]
+  Client[Client (web / mobile / other)] -->|HTTP| Gateway[HTTP API Gateway<br/>(http-api-gateway)]
   Gateway -->|NATS (pub/sub & request/reply)| NATS[NATS Server]
-  Gateway -->|HTTP or NATS| UsersS[Users Microservice\n(`users-microservice`)]
-  Gateway -->|HTTP or NATS| PaymentsS[Payments Microservice\n(`payments-microservice`)]
+  Gateway -->|HTTP or NATS| UsersS[Users Microservice<br/>(users-microservice)]
+  Gateway -->|HTTP or NATS| PaymentsS[Payments Microservice<br/>(payments-microservice)]
   PaymentsS -->|TypeORM| PaymentsDB[(Payments DB)]
   UsersS -->|TypeORM| UsersDB[(Users DB)]
   NATS --> PaymentsS
   NATS --> UsersS
   style NATS fill:#f3f4f6,stroke:#333,stroke-width:1px
+
 ```
 
 Sequence for creating a payment:
