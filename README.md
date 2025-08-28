@@ -44,6 +44,7 @@ graph TB
 
 ### Service Communication Flow (tailored)
 
+```mermaid
 flowchart LR
   subgraph Gateway["API Gateway<br/>(HTTP :3000)"]
   end
@@ -67,6 +68,8 @@ flowchart LR
   Users --> DB
 
 
+```
+
 Sequence for creating a payment:
 
 ```mermaid
@@ -87,6 +90,7 @@ sequenceDiagram
 ```
 
 Notes:
+
 - Gateway mediates client traffic and can perform lightweight validation, auth checks, or proxy requests to microservices.
 - Services communicate via NATS for event-driven flows and request/reply where low-latency RPC-like behavior is desired.
 - Each microservice owns its database schema and TypeORM entities.
@@ -191,7 +195,7 @@ Gateway exposes client-facing endpoints. Inside the codebase the controllers and
 Canonical example endpoints (gateway)
 
 - POST /payments — create a payment (body uses CreatePaymentDto)
-- GET  /users/:id — fetch user (used by gateway to validate requests)
+- GET /users/:id — fetch user (used by gateway to validate requests)
 
 CreatePaymentDto (shape):
 
@@ -232,6 +236,7 @@ npm run build
 ```
 
 Common npm scripts (per service):
+
 - `start:dev` — run with hot-reload (ts-node-dev or nest start --watch)
 - `start` — run compiled JS
 - `build` — compile TypeScript
@@ -244,6 +249,7 @@ Development contract (tiny):
 - Error modes: DB unavailable, NATS unavailable, validation errors
 
 Edge cases to consider:
+
 - Missing/invalid DTO fields
 - Downstream service (DB or NATS) unavailability
 - Duplicate events or retries
@@ -351,4 +357,3 @@ If you'd like I can now:
 - add a repo-level `.env.example` with all environment variables used by services
 - generate individual `README.md` files under each service with service-specific env vars and endpoints
 - create a small script to run local dev infra (start DB + NATS via Docker and run a service locally)
-
