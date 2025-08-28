@@ -44,25 +44,28 @@ graph TB
 
 ### Service Communication Flow (tailored)
 
-```
-┌─────────────────┐    ┌────────────────────────────────────┐    ┌────────────────────────────────────┐
-│   API Gateway    │    │   Users Microservice (NATS only)   │    │ Payments Microservice (NATS only)  │
-│   (HTTP, 3000)  │───▶│   (subscribes to NATS subjects)    │◄───│   (subscribes to NATS subjects)    │
-└─────────────────┘    └────────────────────────────────────┘    └────────────────────────────────────┘
-         │                         ▲                        ▲
-         │                         │                        │
-         ▼                         │                        │
-    ┌────────┐                     │                        │
-    │  NATS  │─────────────────────┘                        │
-    │ 4222   │  (pub/sub & request/reply broker)             │
-    └────────┘                                              │
-         │                                                 │
-         ▼                                                 │
-  ┌────────────┐                                            │
-  │ PostgreSQL │◄───────────────────────────────────────────┘
-  │   5432     │
-  └────────────┘
-```
+flowchart LR
+  subgraph Gateway["API Gateway<br/>(HTTP :3000)"]
+  end
+
+  subgraph Users["Users Microservice<br/>(NATS only)"]
+  end
+
+  subgraph Payments["Payments Microservice<br/>(NATS only)"]
+  end
+
+  subgraph Broker["NATS<br/>(4222)<br/><br/>(pub/sub & request/reply)"]
+  end
+
+  subgraph DB["PostgreSQL<br/>(5432)"]
+  end
+
+  Gateway -->|HTTP| Broker
+  Broker --> Users
+  Broker --> Payments
+  Payments --> DB
+  Users --> DB
+
 
 Sequence for creating a payment:
 
