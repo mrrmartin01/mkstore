@@ -8,23 +8,24 @@ services:
     command: yarn start:dev
     environment:
       - PORT=3000
-      - JWT_SECRET=tftyfywdwe!jg2&&B&Ftrhiu@!HvccDTuef
 
   users_microservice:
     build: ./users-microservice
     volumes:
       - ./users-microservice/src:/usr/src/app/src
     command: yarn start:dev
-    environment:
-      - JWT_SECRET=tftyfywdwe!jg2&&B&Ftrhiu@!HvccDTuef
+
+  products_microservice:
+    build: ./products-microservice
+    volumes:
+      - ./products-microservice/src:/usr/src/app/src
+    command: yarn start:dev
 
   payments_microservice:
     build: ./payments-microservice
     volumes:
       - ./payments-microservice/src:/usr/src/app/src
     command: yarn start:dev
-    environment:
-      - JWT_SECRET=tftyfywdwe!jg2&&B&Ftrhiu@!HvccDTuef
 
   nats:
     image: nats:latest
