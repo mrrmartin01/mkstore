@@ -37,6 +37,5 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: mkstore
     ports:
       - 5432:5432
