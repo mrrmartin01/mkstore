@@ -1,126 +1,165 @@
 networks:
-  mkstore_net:
-
-services:
-  api_gateway:
-    build: ./http-api-gateway
-    ports:
-      - 3000:3000
-    volumes:
-      - ./http-api-gateway/src:/usr/src/app/src
-    command: bun start:dev
-    environment:
-      - PORT=3000
-    networks:
-      - mkstore_net
-
-  # ───────────────────────────────────────────────
-  # Users Service + Dedicated Database
-  # ───────────────────────────────────────────────
-  users_db:
-    image: postgres:15
-    container_name: users_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: users_service
-      POSTGRES_PASSWORD: users_pass_very_secure_2026
-      POSTGRES_DB: users_db
-    ports:
-      - "5433:5432"
-    volumes:
-      - users_data:/var/lib/postgresql/data
-    networks:
-      - mkstore_net
-
-  users_microservice:
-    build: ./users-microservice
-    volumes:
-      - ./users-microservice/src:/usr/src/app/src
-      - ./users-microservice/.env:/usr/src/app/.env
-    command: bun start:dev
-    depends_on:
-      - nats
-      - users_db
-    environment:
-      - NODE_ENV=development
-    networks:
-      - mkstore_net
-
-  # ───────────────────────────────────────────────
-  # Products Service + Dedicated Database
-  # ───────────────────────────────────────────────
-  products_db:
-    image: postgres:15
-    container_name: products_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: products_service
-      POSTGRES_PASSWORD: products_pass_very_secure_2026
-      POSTGRES_DB: products_db
-    ports:
-      - "5434:5432"
-    volumes:
-      - products_data:/var/lib/postgresql/data
-    networks:
-      - mkstore_net
-
-  products_microservice:
-    build: ./products-microservice
-    volumes:
-      - ./products-microservice/src:/usr/src/app/src
-      - ./products-microservice/.env:/usr/src/app/.env
-    command: bun start:dev
-    depends_on:
-      - nats
-      - products_db
-    environment:
-      - NODE_ENV=development
-    networks:
-      - mkstore_net
-
-  # ───────────────────────────────────────────────
-  # Payments Service + Dedicated Database
-  # ───────────────────────────────────────────────
-  payments_db:
-    image: postgres:15
-    container_name: payments_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: payments_service
-      POSTGRES_PASSWORD: payments_pass_very_secure_2026
-      POSTGRES_DB: payments_db
-    ports:
-      - "5435:5432"
-    volumes:
-      - payments_data:/var/lib/postgresql/data
-    networks:
-      - mkstore_net
-
-  payments_microservice:
-    build: ./payments-microservice
-    volumes:
-      - ./payments-microservice/src:/usr/src/app/src
-      - ./payments-microservice/.env:/usr/src/app/.env
-    command: bun start:dev
-    depends_on:
-      - nats
-      - payments_db
-    environment:
-      - NODE_ENV=development
-    networks:
-      - mkstore_net
-
-  # ───────────────────────────────────────────────
-  # NATS Message Broker
-  # ───────────────────────────────────────────────
-  nats:
-    image: nats:latest
-    ports:
-      - 4222:4222
-    networks:
-      - mkstore_net
+  backend:
 
 volumes:
   users_data:
   products_data:
   payments_data:
+
+services:
+  # ───────────────────────────────────────────────
+  # API Gateway
+  # ───────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./http-api-gateway
+    image: api-gateway:dev
+    command: bun start:dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./http-api-gateway/src:/usr/src/app/src
+    env_file:
+      - ./http-api-gateway/.env
+    environment:
+      PORT: 3000
+      USERS_HOST: users-svc
+      USERS_PORT: 3001
+      PRODUCTS_HOST: products-svc
+      PRODUCTS_PORT: 3002
+      PAYMENTS_HOST: payments-svc
+      PAYMENTS_PORT: 3003
+    depends_on:
+      - users-svc
+      - products-svc
+      - payments-svc
+    networks:
+      - backend
+
+  # ───────────────────────────────────────────────
+  # Users Service
+  # ───────────────────────────────────────────────
+  users-svc:
+    build:
+      context: ./users-microservice
+    image: users-service:dev
+    command: bun start:dev
+    volumes:
+      - ./users-microservice/src:/usr/src/user-svc/src
+    env_file:
+      - ./users-microservice/.env
+    environment:
+      HOST: users-svc
+      PORT: 3001
+      DATABASE_URL: postgresql://users_service:users_pass@users-db:5432/users_db
+      NODE_ENV: development
+    depends_on:
+      - users-db
+      - nats
+    networks:
+      - backend
+
+  users-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: users_service
+      POSTGRES_PASSWORD: users_pass
+      POSTGRES_DB: users_db
+    volumes:
+      - users_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # ───────────────────────────────────────────────
+  # Products Service
+  # ───────────────────────────────────────────────
+  products-svc:
+    build:
+      context: ./products-microservice
+    image: products-service:dev
+    command: bun start:dev
+    volumes:
+      - ./products-microservice/src:/usr/src/products-svc/src
+    env_file:
+      - ./products-microservice/.env
+    environment:
+      HOST: products-svc
+      PORT: 3002
+      DATABASE_URL: postgresql://products_service:products_pass@products-db:5432/products_db
+      NODE_ENV: development
+    depends_on:
+      - products-db
+      - nats
+    networks:
+      - backend
+
+  products-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: products_service
+      POSTGRES_PASSWORD: products_pass
+      POSTGRES_DB: products_db
+    volumes:
+      - products_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # ───────────────────────────────────────────────
+  # Payments Service
+  # ───────────────────────────────────────────────
+  payments-svc:
+    build:
+      context: ./payments-microservice
+    image: payments-service:dev
+    command: bun start:dev
+    volumes:
+      - ./payments-microservice/src:/usr/src/payments-svc/src
+    env_file:
+      - ./payments-microservice/.env
+    environment:
+      HOST: payments-svc
+      PORT: 3003
+      DATABASE_URL: postgresql://payments_service:payments_pass@payments-db:5432/payments_db
+      NODE_ENV: development
+    depends_on:
+      - payments-db
+      - nats
+    networks:
+      - backend
+
+  payments-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payments_service
+      POSTGRES_PASSWORD: payments_pass
+      POSTGRES_DB: payments_db
+    volumes:
+      - payments_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # ───────────────────────────────────────────────
+  # PGAdmin
+  # ───────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - backend
+
+  # ───────────────────────────────────────────────
+  # NATS
+  # ───────────────────────────────────────────────
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+    networks:
+      - backend
